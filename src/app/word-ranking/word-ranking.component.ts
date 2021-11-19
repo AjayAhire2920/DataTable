@@ -22,10 +22,11 @@ export class WordRankingComponent implements OnInit {
   dtTrigger: Subject<any> = new Subject();
 
   fileName: any;
+  selectUpload: boolean = false;
 
   ngOnInit() {
 
-    // for file name display
+    // Function to display file name 
     $(document).ready(function () {
       $('input[type="file"]').on("change", function () {
         let filenames = [];
@@ -46,7 +47,7 @@ export class WordRankingComponent implements OnInit {
     });
   }
 
-  rerender(): void {  // render data
+  rerender(): void {  // rerender data
     this.dtElement.dtInstance.then((dtInstance: DataTables.Api) => {
       dtInstance.destroy();
       this.dtTrigger.next();
@@ -55,7 +56,9 @@ export class WordRankingComponent implements OnInit {
 
 
   file: any;
+  // target the change event of file.
   fileChanged(e) {
+    this.selectUpload = true
     this.fileName = e.target.files[0]
     if (e.target.files[0].type === "text/plain") {
       this.file = e.target.files[0];
@@ -65,7 +68,7 @@ export class WordRankingComponent implements OnInit {
     }
   }
 
-  async uploadDocument() {
+  async uploadDocument() { // upload document
     let file = this.file;
     let fileReader = new FileReader();
     fileReader.onload = async (e) => {
@@ -76,25 +79,24 @@ export class WordRankingComponent implements OnInit {
   }
 
   async bindData() {
-    var startTime = performance.now()
-    this.result = this.fileData.toString().replace(/(\r\n|\n|\r)/gm, "").toLowerCase().split(' ').filter(x => x.length > 6);
-    console.log(this.result);
-    
+    var startTime = performance.now() // start time of the execution
+    this.result = this.fileData.toString().replace(/[^a-zA-Z-A-Za-zÀ-ÖØ-öø-ÿ ]/g, ' ').toLowerCase().split(' ').filter(x => x.length > 6);  // converted the fileData into array
     var counts = {};
     await this.result.forEach(x => {
-      counts[x] = (counts[x] || 0) + 1;
+      counts[x] = (counts[x] || 0) + 1;   // increment the duplicates
     });
-    var textKeys = Object.keys(counts);
-    var textValues = Object.values(counts);
-    for (let i = 0; i < 50; i++) {
+    var textKeys = Object.keys(counts);     // keys(name)
+    var textValues = Object.values(counts);    //  values(count)
+    for (let i = 0; i < this.result; i++) {
       var tempArray: any
-      tempArray = Object.assign({ count: textValues[i], name: textKeys[i] })
+      tempArray = Object.assign({ count: textValues[i], name: textKeys[i] });  // assign keys and value to one array
       this.tempFileData.push(tempArray)
     }
-    this.textFileData = this.tempFileData.sort(function(a, b){
-      return b.count - a.count});
-    this.dtTrigger.next();
-    var endTime = performance.now()
+    this.textFileData = this.tempFileData.sort(function (a, b) {  // revering the count of words
+      return b.count - a.count
+    });
+    this.dtTrigger.next();    //  manually trigger the rendering of table
+    var endTime = performance.now()     // execution timeout
     console.log(`Time Taken For Execution :  ${endTime - startTime} milliseconds`)
   }
 
